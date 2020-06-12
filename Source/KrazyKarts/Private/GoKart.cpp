@@ -11,6 +11,7 @@ AGoKart::AGoKart()
 
 	Mass = 1000;
 	MaxDrivingForce = 10000;
+	MaxDegreesPerSecond = 90;
 }
 
 // Called when the game starts or when spawned
@@ -32,6 +33,14 @@ void AGoKart::Tick(float DeltaTime)
 	auto dv = a * DeltaTime;
 	
 	Velocity = Velocity + dv;
+
+	auto angleDelta = MaxDegreesPerSecond * DeltaTime * SteeringThrow;
+
+	FQuat dr(GetActorUpVector(), FMath::DegreesToRadians(angleDelta));
+
+	AddActorWorldRotation(dr);
+
+	Velocity = dr.RotateVector(Velocity);
 	
 	UpdateLocationFromVelocity(DeltaTime);
 }
@@ -42,11 +51,17 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
 }
 
 void AGoKart::MoveForward(float Val)
 {
 	Throttle = Val;
+}
+
+void AGoKart::MoveRight(float Val)
+{
+	SteeringThrow = Val;
 }
 
 void AGoKart::UpdateLocationFromVelocity(float DeltaTime)

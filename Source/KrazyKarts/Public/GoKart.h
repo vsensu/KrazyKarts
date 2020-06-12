@@ -28,6 +28,7 @@ public:
 
 private:
 	void MoveForward(float Val);
+	void MoveRight(float Val);
 	void UpdateLocationFromVelocity(float DeltaTime);
 
 	// The mass of the car (kg).
@@ -38,8 +39,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	float MaxDrivingForce;
 
+	UPROPERTY(EditAnywhere)
+	float MaxDegreesPerSecond;
+
+	float SteeringThrow;
+	
 	FVector Velocity;
 
 	float Throttle;
-
 };
