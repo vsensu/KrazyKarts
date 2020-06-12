@@ -33,8 +33,7 @@ void AGoKart::Tick(float DeltaTime)
 	
 	Velocity = Velocity + dv;
 	
-	auto translation = Velocity * 100 * DeltaTime;
-	AddActorWorldOffset(translation);
+	UpdateLocationFromVelocity(DeltaTime);
 }
 
 // Called to bind functionality to input
@@ -50,3 +49,15 @@ void AGoKart::MoveForward(float Val)
 	Throttle = Val;
 }
 
+void AGoKart::UpdateLocationFromVelocity(float DeltaTime)
+{
+	auto translation = Velocity * 100 * DeltaTime;
+
+	FHitResult hit;
+	AddActorWorldOffset(translation, true, &hit);
+
+	if(hit.IsValidBlockingHit())
+	{
+		Velocity = FVector::ZeroVector;
+	}
+}
