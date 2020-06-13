@@ -31,6 +31,7 @@ private:
 	FVector GetRollingResistance();
 	void MoveForward(float Val);
 	void MoveRight(float Val);
+	void ApplyRotation(float DeltaTime);
 	void UpdateLocationFromVelocity(float DeltaTime);
 
 	// The mass of the car (kg).
@@ -42,7 +43,7 @@ private:
 	float MaxDrivingForce;
 
 	UPROPERTY(EditAnywhere)
-	float MaxDegreesPerSecond;
+	float MinTurningRadius;
 
 	UPROPERTY(EditAnywhere)
 	float DragCoefficient;
