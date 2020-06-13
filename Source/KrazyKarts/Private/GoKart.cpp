@@ -79,6 +79,10 @@ void AGoKart::OnRep_ServerState()
 	Velocity = ServerState.Velocity;
 
 	ClearAcknowledgedMoves(ServerState.LastMove);
+	for(const auto &move : UnacknowledgedMoves)
+	{
+		SimulateMove(move);
+	}
 }
 
 // Called to bind functionality to input
