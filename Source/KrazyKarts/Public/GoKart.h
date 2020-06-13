@@ -64,9 +64,9 @@ private:
 
 	float Throttle;
 
-	UPROPERTY(Replicated)
-	FVector ReplicatedLocation;
-	
-	UPROPERTY(Replicated)
-	FRotator ReplicatedRotation;
+	UPROPERTY(ReplicatedUsing=OnRep_ReplicatedTransform)
+	FTransform ReplicatedTransform;
+
+	UFUNCTION()
+	void OnRep_ReplicatedTransform();
 };
