@@ -58,12 +58,13 @@ void AGoKart::Tick(float DeltaTime)
 
 	if(IsLocallyControlled())
 	{
-		FGoKartMove move;
-		move.DeltaTime = DeltaTime;
-		move.Throttle = Throttle;
-		move.SteeringThrow = SteeringThrow;
-		// TODO: set time
-		// move.Timestamp
+		auto move = CreateMove(DeltaTime);
+
+		if(!HasAuthority())
+		{
+			UnacknowledgedMoves.Add(move);
+			UE_LOG(LogTemp, Warning, TEXT("Move queue length: %d"), UnacknowledgedMoves.Num());
+		}
 
 		Server_SendMove(move);
 		SimulateMove(move);
@@ -76,6 +77,8 @@ void AGoKart::OnRep_ServerState()
 {
 	SetActorTransform(ServerState.Transform);
 	Velocity = ServerState.Velocity;
+
+	ClearAcknowledgedMoves(ServerState.LastMove);
 }
 
 // Called to bind functionality to input
@@ -103,6 +106,31 @@ void AGoKart::SimulateMove(FGoKartMove Move)
 	ApplyRotation(Move.DeltaTime, Move.SteeringThrow);
 	
 	UpdateLocationFromVelocity(Move.DeltaTime);
+}
+
+FGoKartMove AGoKart::CreateMove(float DeltaTime)
+{
+	FGoKartMove move;
+ 	move.DeltaTime = DeltaTime;
+ 	move.Throttle = Throttle;
+ 	move.SteeringThrow = SteeringThrow;
+	move.Timestamp = GetWorld()->TimeSeconds;
+
+	return move;
+}
+
+void AGoKart::ClearAcknowledgedMoves(FGoKartMove LastMove)
+{
+	decltype(UnacknowledgedMoves) NewMoves;
+	for(const auto &move : UnacknowledgedMoves)
+	{
+		if(move.Timestamp > LastMove.Timestamp)
+		{
+			NewMoves.Add(move);
+		}
+	}
+
+	UnacknowledgedMoves = NewMoves;
 }
 
 FVector AGoKart::GetAirResistance()
