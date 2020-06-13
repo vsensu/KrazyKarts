@@ -27,6 +27,7 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
+	FVector GetResistance();
 	void MoveForward(float Val);
 	void MoveRight(float Val);
 	void UpdateLocationFromVelocity(float DeltaTime);
@@ -41,6 +42,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	float MaxDegreesPerSecond;
+
+	UPROPERTY(EditAnywhere)
+	float DragCoefficient;
 
 	float SteeringThrow;
 	
