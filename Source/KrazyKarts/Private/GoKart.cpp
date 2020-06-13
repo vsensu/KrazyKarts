@@ -56,18 +56,23 @@ void AGoKart::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	if(IsLocallyControlled())
+	if(GetLocalRole() == ROLE_AutonomousProxy)
 	{
 		auto move = CreateMove(DeltaTime);
-
-		if(!HasAuthority())
-		{
-			UnacknowledgedMoves.Add(move);
-			UE_LOG(LogTemp, Warning, TEXT("Move queue length: %d"), UnacknowledgedMoves.Num());
-		}
-
-		Server_SendMove(move);
+		UnacknowledgedMoves.Add(move);
 		SimulateMove(move);
+		Server_SendMove(move);
+	}
+	else if(GetLocalRole() == ROLE_Authority && GetRemoteRole() == ROLE_SimulatedProxy)
+	{
+		// server and local control
+
+		auto move = CreateMove(DeltaTime);
+		Server_SendMove(move);
+	}
+	else if(GetLocalRole() == ROLE_SimulatedProxy)
+	{
+		SimulateMove(ServerState.LastMove);
 	}
 	
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(GetLocalRole()), this, FColor::White, 0);
