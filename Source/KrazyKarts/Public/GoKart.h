@@ -29,8 +29,12 @@ public:
 private:
 	FVector GetAirResistance();
 	FVector GetRollingResistance();
-	void MoveForward(float Val);
-	void MoveRight(float Val);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveForward(float Val);
+	
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_MoveRight(float Val);
 	void ApplyRotation(float DeltaTime);
 	void UpdateLocationFromVelocity(float DeltaTime);
 
