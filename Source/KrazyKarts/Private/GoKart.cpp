@@ -13,6 +13,7 @@ AGoKart::AGoKart()
 	MaxDrivingForce = 10000;
 	MaxDegreesPerSecond = 90;
 	DragCoefficient = 16;
+	RollingCoefficient = 0.015;
 }
 
 // Called when the game starts or when spawned
@@ -29,7 +30,8 @@ void AGoKart::Tick(float DeltaTime)
 
 	auto Force = GetActorForwardVector() * MaxDrivingForce * Throttle;
 
-	Force += GetResistance();
+	Force += GetAirResistance();
+	Force += GetRollingResistance();
 
 	auto a = Force / Mass;
 	
@@ -57,9 +59,16 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
 }
 
-FVector AGoKart::GetResistance()
+FVector AGoKart::GetAirResistance()
 {
 	return -Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient;
+}
+
+FVector AGoKart::GetRollingResistance()
+{
+	auto g = FMath::Abs(GetWorld()->GetGravityZ() / 100);
+	auto normalForce = Mass * g;
+	return -Velocity.GetSafeNormal() * RollingCoefficient * normalForce;
 }
 
 void AGoKart::MoveForward(float Val)
