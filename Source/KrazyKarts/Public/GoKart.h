@@ -30,6 +30,9 @@ private:
 	FVector GetAirResistance();
 	FVector GetRollingResistance();
 
+	void MoveForward(float Val);
+	void MoveRight(float Val);
+
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_MoveForward(float Val);
 	

@@ -3,6 +3,8 @@
 
 #include "GoKart.h"
 
+#include "DrawDebugHelpers.h"
+
 // Sets default values
 AGoKart::AGoKart()
 {
@@ -21,6 +23,18 @@ void AGoKart::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+FString GetEnumText(ENetRole role)
+{
+	switch (role)
+	{
+	case ROLE_None: return "None";
+	case ROLE_SimulatedProxy: return "SimulatedProxy";
+	case ROLE_AutonomousProxy: return "AutonomousProxy";
+	case ROLE_Authority: return "Authority";
+	default: return "Error";
+	}
 }
 
 // Called every frame
@@ -42,6 +56,8 @@ void AGoKart::Tick(float DeltaTime)
 	ApplyRotation(DeltaTime);
 	
 	UpdateLocationFromVelocity(DeltaTime);
+
+	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(GetLocalRole()), this, FColor::White, 0);
 }
 
 // Called to bind functionality to input
@@ -49,8 +65,8 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::Server_MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::Server_MoveRight);
+	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
 }
 
 FVector AGoKart::GetAirResistance()
@@ -63,6 +79,18 @@ FVector AGoKart::GetRollingResistance()
 	auto g = FMath::Abs(GetWorld()->GetGravityZ() / 100);
 	auto normalForce = Mass * g;
 	return -Velocity.GetSafeNormal() * RollingCoefficient * normalForce;
+}
+
+void AGoKart::MoveForward(float Val)
+{
+	Throttle = Val;
+	Server_MoveForward(Val);
+}
+
+void AGoKart::MoveRight(float Val)
+{
+	SteeringThrow = Val;
+	Server_MoveRight(Val);
 }
 
 void AGoKart::Server_MoveForward_Implementation(float Val)
