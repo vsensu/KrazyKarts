@@ -4,25 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
+#include "GoKartMovementComponent.h"
 #include "GoKart.generated.h"
 
-USTRUCT()
-struct FGoKartMove
-{
-	GENERATED_BODY()
-
-	UPROPERTY()
-	float SteeringThrow;
-
-	UPROPERTY()
-    float Throttle;
-
-	UPROPERTY()
-	float DeltaTime;
-	
-	UPROPERTY()
-	float Timestamp;
-};
 
 USTRUCT()
 struct FGoKartState 
@@ -38,6 +22,7 @@ struct FGoKartState
 	UPROPERTY()
 	FGoKartMove LastMove;
 };
+
 
 UCLASS()
 class KRAZYKARTS_API AGoKart : public APawn
@@ -60,47 +45,22 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	void SimulateMove(FGoKartMove Move);
-	FGoKartMove CreateMove(float DeltaTime);
 	void ClearAcknowledgedMoves(FGoKartMove LastMove);
-	FVector GetAirResistance();
-	FVector GetRollingResistance();
 
 	void MoveForward(float Val);
 	void MoveRight(float Val);
 
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_SendMove(FGoKartMove Val);
-
-	void ApplyRotation(float DeltaTime, float NewSteeringThrow);
-	void UpdateLocationFromVelocity(float DeltaTime);
 	
 	UFUNCTION()
     void OnRep_ServerState();
 
-	// The mass of the car (kg).
-	UPROPERTY(EditAnywhere)
-	float Mass;
-
-	// The force applied to the car when the throttle is fully down (N).
-	UPROPERTY(EditAnywhere)
-	float MaxDrivingForce;
-
-	UPROPERTY(EditAnywhere)
-	float MinTurningRadius;
-
-	UPROPERTY(EditAnywhere)
-	float DragCoefficient;
-
-	UPROPERTY(EditAnywhere)
-	float RollingCoefficient;
-
 	UPROPERTY(ReplicatedUsing=OnRep_ServerState)
 	FGoKartState ServerState;
 
-	float SteeringThrow;
-	FVector Velocity;
-	float Throttle;
+	UPROPERTY()
+	UGoKartMovementComponent *MovementComp;
 
 	TArray<FGoKartMove> UnacknowledgedMoves;
 };

@@ -13,11 +13,8 @@ AGoKart::AGoKart()
 	PrimaryActorTick.bCanEverTick = true;
 	bReplicates = true;
 
-	Mass = 1000;
-	MaxDrivingForce = 10000;
-	MinTurningRadius = 10;
-	DragCoefficient = 16;
-	RollingCoefficient = 0.015;
+	MovementComp = CreateDefaultSubobject<UGoKartMovementComponent>(TEXT("MovementComp"));
+
 }
 
 // Called when the game starts or when spawned
@@ -58,21 +55,21 @@ void AGoKart::Tick(float DeltaTime)
 
 	if(GetLocalRole() == ROLE_AutonomousProxy)
 	{
-		auto move = CreateMove(DeltaTime);
+		auto move = MovementComp->CreateMove(DeltaTime);
 		UnacknowledgedMoves.Add(move);
-		SimulateMove(move);
+		MovementComp->SimulateMove(move);
 		Server_SendMove(move);
 	}
 	else if(GetLocalRole() == ROLE_Authority && GetRemoteRole() == ROLE_SimulatedProxy)
 	{
 		// server and local control
 
-		auto move = CreateMove(DeltaTime);
+		auto move = MovementComp->CreateMove(DeltaTime);
 		Server_SendMove(move);
 	}
 	else if(GetLocalRole() == ROLE_SimulatedProxy)
 	{
-		SimulateMove(ServerState.LastMove);
+		MovementComp->SimulateMove(ServerState.LastMove);
 	}
 	
 	DrawDebugString(GetWorld(), FVector(0, 0, 100), GetEnumText(GetLocalRole()), this, FColor::White, 0);
@@ -81,12 +78,12 @@ void AGoKart::Tick(float DeltaTime)
 void AGoKart::OnRep_ServerState()
 {
 	SetActorTransform(ServerState.Transform);
-	Velocity = ServerState.Velocity;
+	MovementComp->SetVelocity(ServerState.Velocity);
 
 	ClearAcknowledgedMoves(ServerState.LastMove);
 	for(const auto &move : UnacknowledgedMoves)
 	{
-		SimulateMove(move);
+		MovementComp->SimulateMove(move);
 	}
 }
 
@@ -97,35 +94,6 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AGoKart::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AGoKart::MoveRight);
-}
-
-void AGoKart::SimulateMove(FGoKartMove Move)
-{
-	auto Force = GetActorForwardVector() * MaxDrivingForce * Move.Throttle;
-
-	Force += GetAirResistance();
-	Force += GetRollingResistance();
-
-	auto a = Force / Mass;
-	
-	auto dv = a * Move.DeltaTime;
-	
-	Velocity = Velocity + dv;
-
-	ApplyRotation(Move.DeltaTime, Move.SteeringThrow);
-	
-	UpdateLocationFromVelocity(Move.DeltaTime);
-}
-
-FGoKartMove AGoKart::CreateMove(float DeltaTime)
-{
-	FGoKartMove move;
- 	move.DeltaTime = DeltaTime;
- 	move.Throttle = Throttle;
- 	move.SteeringThrow = SteeringThrow;
-	move.Timestamp = GetWorld()->TimeSeconds;
-
-	return move;
 }
 
 void AGoKart::ClearAcknowledgedMoves(FGoKartMove LastMove)
@@ -142,65 +110,27 @@ void AGoKart::ClearAcknowledgedMoves(FGoKartMove LastMove)
 	UnacknowledgedMoves = NewMoves;
 }
 
-FVector AGoKart::GetAirResistance()
-{
-	return -Velocity.GetSafeNormal() * Velocity.SizeSquared() * DragCoefficient;
-}
-
-FVector AGoKart::GetRollingResistance()
-{
-	auto g = FMath::Abs(GetWorld()->GetGravityZ() / 100);
-	auto normalForce = Mass * g;
-	return -Velocity.GetSafeNormal() * RollingCoefficient * normalForce;
-}
-
 void AGoKart::MoveForward(float Val)
 {
-	Throttle = Val;
+	MovementComp->SetThrottle(Val);
 }
 
 void AGoKart::MoveRight(float Val)
 {
-	SteeringThrow = Val;
+	MovementComp->SetSteeringThrow(Val);
 }
 
 void AGoKart::Server_SendMove_Implementation(FGoKartMove Val)
 {
-	SimulateMove(Val);
+	MovementComp->SimulateMove(Val);
 
 	ServerState.LastMove = Val;
 	ServerState.Transform = GetActorTransform();
-	ServerState.Velocity = Velocity;
+	ServerState.Velocity = MovementComp->GetVelocity();
 }
 
 bool AGoKart::Server_SendMove_Validate(FGoKartMove Val)
 {
 	// TODO: validate
 	return true;
-}
-
-void AGoKart::ApplyRotation(float DeltaTime, float NewSteeringThrow)
-{
-	auto dx = FVector::DotProduct(GetActorForwardVector(), Velocity) * DeltaTime;
-	
-	auto angleDelta = dx / MinTurningRadius * NewSteeringThrow;
-
-	FQuat dr(GetActorUpVector(), angleDelta);
-
-	AddActorWorldRotation(dr);
-
-	Velocity = dr.RotateVector(Velocity);
-}
-
-void AGoKart::UpdateLocationFromVelocity(float DeltaTime)
-{
-	auto translation = Velocity * 100 * DeltaTime;
-
-	FHitResult hit;
-	AddActorWorldOffset(translation, true, &hit);
-
-	if(hit.IsValidBlockingHit())
-	{
-		Velocity = FVector::ZeroVector;
-	}
 }
