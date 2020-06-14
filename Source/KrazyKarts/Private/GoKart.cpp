@@ -28,8 +28,8 @@ AGoKart::AGoKart()
 	bReplicates = true;
 	SetReplicateMovement(false);
 
-	MovementComp = CreateDefaultSubobject<UGoKartMovementComponent>(TEXT("MovementComp"));
-	MovementCompReplicator = CreateDefaultSubobject<UGoKartMovementReplicator>(TEXT("MovementReplicator"));
+	GoKartMovementComp = CreateDefaultSubobject<UGoKartMovementComponent>(TEXT("MovementComp"));
+	GoKartMovementReplicator = CreateDefaultSubobject<UGoKartMovementReplicator>(TEXT("GoKartMovementReplicator"));
 
 }
 
@@ -65,10 +65,10 @@ void AGoKart::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 
 void AGoKart::MoveForward(float Val)
 {
-	MovementComp->SetThrottle(Val);
+	GoKartMovementComp->SetThrottle(Val);
 }
 
 void AGoKart::MoveRight(float Val)
 {
-	MovementComp->SetSteeringThrow(Val);
+	GoKartMovementComp->SetSteeringThrow(Val);
 }

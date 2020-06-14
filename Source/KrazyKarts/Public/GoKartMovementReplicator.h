@@ -86,6 +86,12 @@ private:
 	UPROPERTY()
 	class UGoKartMovementComponent *MovementComp;
 
+	UPROPERTY()
+	USceneComponent *MeshOffsetRoot;
+
+	UFUNCTION(BlueprintCallable)
+	void SetMeshOffsetRoot(USceneComponent *Root) {MeshOffsetRoot = Root;}
+
 	float SimulatedProxyTimeSinceLastUpdate;
 	float SimulatedProxyTimeBetweenLastUpdates;
 
