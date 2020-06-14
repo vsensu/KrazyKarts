@@ -51,6 +51,8 @@ private:
 	UFUNCTION()
     void OnRep_ServerState();
 
+	void UpdateServerState(const FGoKartMove &Val);
+
 	UPROPERTY(ReplicatedUsing=OnRep_ServerState)
     FGoKartState ServerState;
 	
