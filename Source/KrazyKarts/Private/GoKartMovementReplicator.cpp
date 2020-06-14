@@ -53,6 +53,8 @@ void UGoKartMovementReplicator::TickComponent(float DeltaTime, ELevelTick TickTy
 
 void UGoKartMovementReplicator::SimulatedProxyTick(float DeltaTime)
 {
+	if(MovementComp == nullptr) return;
+	
 	SimulatedProxyTimeSinceLastUpdate += DeltaTime;
 
 	if(SimulatedProxyTimeBetweenLastUpdates < KINDA_SMALL_NUMBER)
@@ -61,11 +63,18 @@ void UGoKartMovementReplicator::SimulatedProxyTick(float DeltaTime)
 	float lerpRatio = SimulatedProxyTimeSinceLastUpdate / SimulatedProxyTimeBetweenLastUpdates;
 	auto startLocation = SimulatedProxyStartTransform.GetLocation();
 	auto targetLocation = ServerState.Transform.GetLocation();
-	auto newLocation = FMath::LerpStable(startLocation, targetLocation, lerpRatio);
+
+	auto startDerivative = SimulatedProxyStartVelocity * SimulatedProxyTimeBetweenLastUpdates * 100;
+	auto targetDerivative = ServerState.Velocity * SimulatedProxyTimeBetweenLastUpdates * 100;
+	auto newLocation = FMath::CubicInterp(startLocation, startDerivative, targetLocation, targetDerivative, lerpRatio);
 
 	auto startRotation = SimulatedProxyStartTransform.GetRotation();
 	auto targetRotation = ServerState.Transform.GetRotation();
 	auto newRotation = FQuat::Slerp(startRotation, targetRotation, lerpRatio);
+
+	auto newDerivative = FMath::CubicInterpDerivative(startLocation, startDerivative, targetLocation, targetDerivative, lerpRatio);
+	auto newVelocity = newDerivative / (SimulatedProxyTimeBetweenLastUpdates * 100);
+	MovementComp->SetVelocity(newVelocity);	
 
 	GetOwner()->SetActorLocation(newLocation);
 	GetOwner()->SetActorRotation(newRotation);
@@ -135,10 +144,13 @@ void UGoKartMovementReplicator::AutonomousProxy_OnRep_ServerState()
 
 void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
 {
+	if(MovementComp == nullptr) return;
+	
 	SimulatedProxyTimeBetweenLastUpdates = SimulatedProxyTimeSinceLastUpdate;
 	SimulatedProxyTimeSinceLastUpdate = 0;
 
 	SimulatedProxyStartTransform = GetOwner()->GetActorTransform();
+	SimulatedProxyStartVelocity = MovementComp->GetVelocity();
 }
 
 void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove &Val)
