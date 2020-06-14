@@ -97,4 +97,6 @@ private:
 
 	FTransform SimulatedProxyStartTransform;
 	FVector SimulatedProxyStartVelocity;
+
+	float ClientSimulatedTime;
 };

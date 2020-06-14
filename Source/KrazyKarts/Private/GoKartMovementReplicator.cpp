@@ -106,6 +106,8 @@ void UGoKartMovementReplicator::InterpolateRotation(float LerpRatio)
 void UGoKartMovementReplicator::Server_SendMove_Implementation(FGoKartMove Val)
 {
 	if(MovementComp == nullptr) return;
+
+	ClientSimulatedTime += Val.DeltaTime;
 	
 	MovementComp->SimulateMove(Val);
 
@@ -115,7 +117,20 @@ void UGoKartMovementReplicator::Server_SendMove_Implementation(FGoKartMove Val)
 
 bool UGoKartMovementReplicator::Server_SendMove_Validate(FGoKartMove Val)
 {
-	// TODO: validate
+	auto proposedTime = ClientSimulatedTime + Val.DeltaTime;
+	bool clientNotRunningAhead = proposedTime < GetWorld()->TimeSeconds;
+	if(!clientNotRunningAhead)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Client is running too fast."))
+		return false;
+	}
+	
+	if(!Val.IsValidInput())
+	{
+		UE_LOG(LogTemp, Error, TEXT("Client has invalid input."))
+		return false;
+	}
+
 	return true;
 }
 
