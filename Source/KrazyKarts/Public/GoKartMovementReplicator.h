@@ -67,5 +67,5 @@ private:
 	float SimulatedProxyTimeSinceLastUpdate;
 	float SimulatedProxyTimeBetweenLastUpdates;
 
-	FVector SimulatedProxyStartLocation;
+	FTransform SimulatedProxyStartTransform;
 };

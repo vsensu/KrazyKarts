@@ -59,11 +59,16 @@ void UGoKartMovementReplicator::SimulatedProxyTick(float DeltaTime)
 		return;
 
 	float lerpRatio = SimulatedProxyTimeSinceLastUpdate / SimulatedProxyTimeBetweenLastUpdates;
-	auto startLocation = SimulatedProxyStartLocation;
+	auto startLocation = SimulatedProxyStartTransform.GetLocation();
 	auto targetLocation = ServerState.Transform.GetLocation();
 	auto newLocation = FMath::LerpStable(startLocation, targetLocation, lerpRatio);
 
+	auto startRotation = SimulatedProxyStartTransform.GetRotation();
+	auto targetRotation = ServerState.Transform.GetRotation();
+	auto newRotation = FQuat::Slerp(startRotation, targetRotation, lerpRatio);
+
 	GetOwner()->SetActorLocation(newLocation);
+	GetOwner()->SetActorRotation(newRotation);
 }
 
 
@@ -133,7 +138,7 @@ void UGoKartMovementReplicator::SimulatedProxy_OnRep_ServerState()
 	SimulatedProxyTimeBetweenLastUpdates = SimulatedProxyTimeSinceLastUpdate;
 	SimulatedProxyTimeSinceLastUpdate = 0;
 
-	SimulatedProxyStartLocation = GetOwner()->GetActorLocation();
+	SimulatedProxyStartTransform = GetOwner()->GetActorTransform();
 }
 
 void UGoKartMovementReplicator::UpdateServerState(const FGoKartMove &Val)
